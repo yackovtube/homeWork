@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  hellohtml:
+    image: htmlhello
+    ports:
+      - "8080:80"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
