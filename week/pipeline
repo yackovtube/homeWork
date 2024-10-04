@@ -1,0 +1,64 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'alpine:latest'
+        NEW_IMAGE = 'yackovt/alpine-custom:latest'
+    }
+
+    stages {
+        stage('Download Alpine Image') {
+            steps {
+                script {
+                    echo "${DOCKER_IMAGE}"
+                    sh "docker pull ${DOCKER_IMAGE}"
+                    echo "succes download"
+                }
+            }
+        }
+
+        stage('Build Custom Image') {
+            steps {
+                script {
+                    def dockerfile = '''
+                    FROM alpine:latest
+                    COPY file.txt /file.txt
+                    '''
+                    
+                    // Write the Dockerfile to a temporary location
+                    writeFile file: 'Dockerfile', text: dockerfile
+                    
+                    // Copy the file to the workspace
+                    sh "touch file.txt"
+                    
+                    // Build the custom image
+                    sh "docker build -t ${NEW_IMAGE} ."
+                }
+            }
+        }
+
+        stage('Push Custom Image') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker_cred', passwordVariable: 'docker_pass', usernameVariable: 'docker_user')]) {
+                        sh "docker login -u='${docker_user}' -p='${docker_pass}'"
+                        sh "docker push ${NEW_IMAGE}" 
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Clean up the workspace
+            cleanWs()
+        }
+    }
+}
+
+
+
+
+
+
